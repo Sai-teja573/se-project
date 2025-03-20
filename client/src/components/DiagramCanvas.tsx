@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react";
 import { drawElement, drawConnection } from "@/lib/canvas";
-import { Element, Connection } from "@shared/schema";
+import { Element, Connection, DataDictionaryEntry } from "@shared/schema";
 import { nanoid } from "nanoid";
 
 interface DiagramCanvasProps {
@@ -9,6 +9,7 @@ interface DiagramCanvasProps {
   selectedTool: string | null;
   onElementsChange: (elements: Element[]) => void;
   onConnectionsChange: (connections: Connection[]) => void;
+  onDictionaryUpdate?: (entry: DataDictionaryEntry) => void;
 }
 
 export function DiagramCanvas({
@@ -17,6 +18,7 @@ export function DiagramCanvas({
   selectedTool,
   onElementsChange,
   onConnectionsChange,
+  onDictionaryUpdate,
 }: DiagramCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dragging, setDragging] = useState<string | null>(null);
@@ -36,6 +38,27 @@ export function DiagramCanvas({
     elements.forEach(element => drawElement(ctx, element));
     connections.forEach(connection => drawConnection(ctx, connection, elements));
   }, [elements, connections]);
+
+  const generateDictionaryEntry = (element: Element): DataDictionaryEntry => {
+    let description = "";
+    switch (element.type) {
+      case "bubble":
+        description = `Process that handles ${element.text.toLowerCase()} operations`;
+        break;
+      case "entity":
+        description = `External entity that interacts with ${element.text.toLowerCase()}`;
+        break;
+      case "datastore":
+        description = `Storage for ${element.text.toLowerCase()} data`;
+        break;
+    }
+
+    return {
+      id: nanoid(),
+      name: element.text,
+      description,
+    };
+  };
 
   const handleMouseDown = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
@@ -80,6 +103,11 @@ export function DiagramCanvas({
         text: `New ${selectedTool}`
       };
       onElementsChange([...elements, newElement]);
+
+      // Generate and add dictionary entry
+      if (onDictionaryUpdate) {
+        onDictionaryUpdate(generateDictionaryEntry(newElement));
+      }
     }
   };
 
@@ -109,7 +137,7 @@ export function DiagramCanvas({
       ref={canvasRef}
       width={800}
       height={600}
-      className="border border-gray-300 rounded-lg bg-white"
+      className="border border-primary/20 rounded-lg bg-white shadow-lg hover:shadow-xl transition-shadow duration-300"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
