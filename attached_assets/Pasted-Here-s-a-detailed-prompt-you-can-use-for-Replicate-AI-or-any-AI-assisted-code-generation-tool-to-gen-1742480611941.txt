@@ -1,0 +1,74 @@
+Here's a detailed prompt you can use for Replicate AI or any AI-assisted code generation tool to generate your CASE tool project:  
+
+---
+
+**Prompt:**  
+> Create a full-stack project for a CASE tool for automating structured software analysis and design using the following structure:  
+>  
+> **Project Name:** case-tool-project  
+>  
+> **Tech Stack:**  
+> - Frontend: React.js (HTML, CSS, JS)  
+> - Backend: Node.js with Express.js  
+> - Database: MongoDB  
+>  
+> **Folder Structure:**  
+> ```
+> /case-tool-project
+> ├── frontend
+> │   ├── public
+> │   │   └── index.html
+> │   ├── src
+> │   │   ├── pages
+> │   │   │   ├── Home.js
+> │   │   │   ├── DiagramEditor.js
+> │   │   ├── components
+> │   │   │   ├── Toolbar.js
+> │   │   │   ├── DiagramCanvas.js
+> │   │   │   ├── DataDictionary.js
+> │   │   ├── App.js
+> │   │   ├── App.css
+> │   │   └── index.js
+> │   ├── .gitignore
+> │   ├── package.json
+> │   ├── README.md
+> └── backend
+>     ├── server.js
+>     ├── routes
+>     │   └── diagramRoutes.js
+>     ├── controllers
+>     │   └── diagramController.js
+>     ├── models
+>     │   └── diagramModel.js
+>     ├── .env
+>     ├── .gitignore
+>     ├── package.json
+>     ├── README.md
+> ```
+>  
+> **Frontend Requirements:**  
+> - Create a responsive UI using React.js with reusable components.  
+> - Include a `Home.js` page explaining the tool.  
+> - Provide a `DiagramEditor.js` page with a graphical canvas to draw bubbles, entities, data stores, and arrows.  
+> - Add a toolbar component (`Toolbar.js`) with options to select and connect elements.  
+> - Implement an error-checking feature for balancing errors using buttons.  
+> - Provide a `DataDictionary.js` component to display a dynamic data dictionary.  
+>  
+> **Backend Requirements:**  
+> - Implement a simple Node.js backend using Express.js.  
+> - Create APIs for storing, retrieving, and updating diagrams.  
+> - Perform data validation using Mongoose and MongoDB.  
+> - Create a `.env` file for database connection.  
+> - Provide appropriate error handling using Express middleware.  
+>  
+> **Additional Features:**  
+> - Implement drag-and-drop functionality using a React library like `react-dnd`.  
+> - Provide basic authentication using JWT.  
+> - Allow diagrams to be exported as images.  
+> - Use CORS for secure API access between frontend and backend.  
+>  
+> Please generate clean, maintainable, and well-documented code with comments.
+
+---
+
+This prompt is clear and detailed, ensuring the AI generates code that matches your expectations. After the generation, you can further customize or refine it based on your specific requirements.
