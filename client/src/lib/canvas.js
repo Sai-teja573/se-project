@@ -71,3 +71,39 @@ export function drawConnection(ctx, connection, elements) {
   ctx.fill();
   ctx.restore();
 }
+
+export function drawTempConnection(ctx, fromElement, toPoint) {
+  ctx.save();
+  
+  // Use dashed line for temporary connection
+  ctx.setLineDash([5, 3]);
+  ctx.strokeStyle = '#666666';
+  ctx.lineWidth = 2;
+  
+  // Draw the line from element to current mouse position
+  ctx.beginPath();
+  ctx.moveTo(fromElement.x, fromElement.y);
+  ctx.lineTo(toPoint.x, toPoint.y);
+  ctx.stroke();
+  
+  // Draw arrow at the endpoint
+  const angle = Math.atan2(toPoint.y - fromElement.y, toPoint.x - fromElement.x);
+  const arrowLength = 15;
+  const arrowWidth = 8;
+
+  ctx.beginPath();
+  ctx.moveTo(toPoint.x, toPoint.y);
+  ctx.lineTo(
+    toPoint.x - arrowLength * Math.cos(angle) + arrowWidth * Math.sin(angle),
+    toPoint.y - arrowLength * Math.sin(angle) - arrowWidth * Math.cos(angle)
+  );
+  ctx.lineTo(
+    toPoint.x - arrowLength * Math.cos(angle) - arrowWidth * Math.sin(angle),
+    toPoint.y - arrowLength * Math.sin(angle) + arrowWidth * Math.cos(angle)
+  );
+  ctx.closePath();
+  ctx.fillStyle = '#666666';
+  ctx.fill();
+  
+  ctx.restore();
+}

@@ -28,9 +28,25 @@ export default function Editor() {
   useEffect(() => {
     if (diagram) {
       setName(diagram.name);
-      setElements(diagram.elements.elements);
-      setConnections(diagram.elements.connections);
-      setDictionary(diagram.dataDictionary);
+
+      // Handle different possible structures of diagram data
+      if (diagram.elements) {
+        if (Array.isArray(diagram.elements)) {
+          // If elements is an array, assume it contains the elements directly
+          setElements(diagram.elements);
+          setConnections(diagram.connections || []);
+        } else if (diagram.elements.elements) {
+          // If elements is an object with elements and connections properties
+          setElements(diagram.elements.elements);
+          setConnections(diagram.elements.connections || []);
+        }
+      } else {
+        // Reset to empty arrays if no elements data
+        setElements([]);
+        setConnections([]);
+      }
+
+      setDictionary(diagram.dataDictionary || []);
     }
   }, [diagram]);
 

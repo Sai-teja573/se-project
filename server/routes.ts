@@ -1,10 +1,15 @@
 import type { Express } from "express";
-import { createServer } from "http";
+import { createServer, Server } from "http";
 import { storage } from "./storage";
 import { insertDiagramSchema } from "@shared/schema";
 import { z } from "zod";
 
-export async function registerRoutes(app: Express) {
+interface ServerWithPort {
+  server: Server;
+  port: number;
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/diagrams", async (_req, res) => {
     const diagrams = await storage.getAllDiagrams();
     res.json(diagrams);
@@ -72,5 +77,51 @@ export async function registerRoutes(app: Express) {
     res.status(204).end();
   });
 
-  return createServer(app);
+  const server = createServer(app);
+  return server;
+}
+
+export async function startServer(
+  server: Server, 
+  initialPort: number = 5000,
+  maxRetries = 3
+): Promise<ServerWithPort> {
+  let currentPort = initialPort;
+  let retryCount = 0;
+  
+  while (retryCount < maxRetries) {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const onError = (error: Error & { code?: string }) => {
+          if (error.code === 'EADDRINUSE') {
+            server.removeListener('error', onError);
+            currentPort++;
+            retryCount++;
+            console.log(`Port ${currentPort - 1} is in use, trying port ${currentPort}`);
+            resolve();
+          } else {
+            reject(error);
+          }
+        };
+
+        server.once('error', onError);
+        
+        server.listen(currentPort, '0.0.0.0', () => {
+          server.removeListener('error', onError);
+          console.log(`Server running on port ${currentPort}`);
+          resolve();
+        });
+      });
+      
+      // If we get here without an error, the server started successfully
+      return { server, port: currentPort };
+    } catch (error) {
+      // Handle any errors that weren't about the port being in use
+      if (retryCount >= maxRetries) {
+        throw new Error(`Could not start server after ${maxRetries} attempts: ${error}`);
+      }
+    }
+  }
+  
+  throw new Error(`Could not find an available port after ${maxRetries} attempts`);
 }

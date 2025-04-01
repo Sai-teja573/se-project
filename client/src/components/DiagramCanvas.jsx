@@ -1,11 +1,12 @@
-import { useRef, useEffect, useState } from "react";
-import { drawElement, drawConnection } from "@/lib/canvas";
+import { useRef, useState, useEffect } from "react";
 import { nanoid } from "nanoid";
+import { drawElement, drawConnection, drawTempConnection } from "../lib/canvas.js";
 
 export function DiagramCanvas({ elements, connections, selectedTool, onElementsChange, onConnectionsChange, onDictionaryUpdate }) {
   const canvasRef = useRef(null);
   const [dragging, setDragging] = useState(null);
   const [connecting, setConnecting] = useState(null);
+  const [tempConnectionPoint, setTempConnectionPoint] = useState(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -20,7 +21,15 @@ export function DiagramCanvas({ elements, connections, selectedTool, onElementsC
     // Draw all elements
     elements.forEach(element => drawElement(ctx, element));
     connections.forEach(connection => drawConnection(ctx, connection, elements));
-  }, [elements, connections]);
+    
+    // Draw temporary connection if we're in the middle of creating one
+    if (connecting && tempConnectionPoint) {
+      const fromElement = elements.find(e => e.id === connecting);
+      if (fromElement) {
+        drawTempConnection(ctx, fromElement, tempConnectionPoint);
+      }
+    }
+  }, [elements, connections, connecting, tempConnectionPoint]);
 
   const generateDictionaryEntry = (element) => {
     let description = "";
@@ -43,6 +52,14 @@ export function DiagramCanvas({ elements, connections, selectedTool, onElementsC
     };
   };
 
+  const findElementAtPosition = (x, y) => {
+    return elements.find(element => {
+      const dx = element.x - x;
+      const dy = element.y - y;
+      return Math.sqrt(dx * dx + dy * dy) < 40;
+    });
+  };
+
   const handleMouseDown = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -52,28 +69,15 @@ export function DiagramCanvas({ elements, connections, selectedTool, onElementsC
     const y = e.clientY - rect.top;
 
     // Check if clicking an existing element
-    const clickedElement = elements.find(element => {
-      const dx = element.x - x;
-      const dy = element.y - y;
-      return Math.sqrt(dx * dx + dy * dy) < 40;
-    });
+    const clickedElement = findElementAtPosition(x, y);
 
     if (clickedElement) {
-      if (connecting) {
-        // Complete connection
-        onConnectionsChange([
-          ...connections,
-          {
-            id: nanoid(),
-            from: connecting,
-            to: clickedElement.id,
-            type: "arrow"
-          }
-        ]);
-        setConnecting(null);
-      } else if (selectedTool === "connect") {
+      if (selectedTool === "connect") {
+        // Start a connection
         setConnecting(clickedElement.id);
+        setTempConnectionPoint({ x, y });
       } else {
+        // Start dragging the element
         setDragging(clickedElement.id);
       }
     } else if (selectedTool && selectedTool !== "connect") {
@@ -95,8 +99,6 @@ export function DiagramCanvas({ elements, connections, selectedTool, onElementsC
   };
 
   const handleMouseMove = (e) => {
-    if (!dragging) return;
-
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -104,14 +106,60 @@ export function DiagramCanvas({ elements, connections, selectedTool, onElementsC
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    onElementsChange(
-      elements.map(element =>
-        element.id === dragging ? { ...element, x, y } : element
-      )
-    );
+    if (dragging) {
+      // Update element position while dragging
+      onElementsChange(
+        elements.map(element =>
+          element.id === dragging ? { ...element, x, y } : element
+        )
+      );
+    } else if (connecting) {
+      // Update temporary connection endpoint
+      setTempConnectionPoint({ x, y });
+    }
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // If we're creating a connection and releasing over another element
+    if (connecting) {
+      const targetElement = findElementAtPosition(x, y);
+      
+      // Don't connect to the same element or to no element
+      if (targetElement && targetElement.id !== connecting) {
+        // Create the connection
+        onConnectionsChange([
+          ...connections,
+          {
+            id: nanoid(),
+            from: connecting,
+            to: targetElement.id,
+            type: "arrow"
+          }
+        ]);
+      }
+      
+      // Reset connection state
+      setConnecting(null);
+      setTempConnectionPoint(null);
+    }
+
+    // Reset dragging state
+    setDragging(null);
+  };
+
+  const handleMouseLeave = () => {
+    // Reset states when mouse leaves the canvas
+    if (connecting) {
+      setConnecting(null);
+      setTempConnectionPoint(null);
+    }
     setDragging(null);
   };
 
@@ -124,6 +172,7 @@ export function DiagramCanvas({ elements, connections, selectedTool, onElementsC
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseLeave}
     />
   );
 }
